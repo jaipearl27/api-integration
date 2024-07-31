@@ -25,11 +25,12 @@ app.use(
   })
 );
 
-app.use("/api/v1/projects", projectsRouter);
 
 app.get("/", async (req, res) => {
   res.status(200).send('it works')
 });
+
+app.use("/api/v1/projects", projectsRouter);
 
 app.listen(PORT, () => {
   console.log(`server started on port ${PORT}`);
