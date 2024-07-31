@@ -5,7 +5,7 @@ const apiKeysString = process.env.API_KEYS;
 const apiKeys = JSON.parse(apiKeysString);
 
 const findProjectsData = async (data) => {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
   for (let i = 0; i < apiKeys.length; i++) {
     const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
