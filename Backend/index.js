@@ -18,7 +18,7 @@ app.use(
       "http://localhost:5174",
       "https://api-integration-1.vercel.app",
     ],
-    credentials: true,
+    // credentials: true,
     methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
     exposedHeaders: ["*", "Authorization"],
