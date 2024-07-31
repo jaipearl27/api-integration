@@ -28,12 +28,7 @@ app.use(
 app.use("/api/v1/projects", projectsRouter);
 
 app.get("/", async (req, res) => {
-  try {
-    const data = await getData();
-    res.json(data);
-  } catch (error) {
-    console.error(error);
-  }
+  res.status(200).send('it works')
 });
 
 app.listen(PORT, () => {
