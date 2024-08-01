@@ -17,6 +17,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "https://api-integration-1.vercel.app",
+      "*"
     ],
     // credentials: true,
     methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],

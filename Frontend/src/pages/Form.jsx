@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import Select from "react-select";
 import { BeatLoader } from "react-spinner";
 import Skeleton from "react-loading-skeleton";
-import {toast, Toaster} from 'sonner'
+import { toast, Toaster } from "sonner";
 
 const Form = () => {
   const [apiData, setApiData] = useState(
@@ -59,22 +59,23 @@ const Form = () => {
     axios
       .post(`${import.meta.env.VITE_API_URL}/projects/find`, data)
       .then((res) => {
+        console.log(res.status, "status");
         let resData = { data: res.data.result, formData: data };
         setApiData(resData);
-        if(resData?.data?.length > 0) {
-          toast.success('Projects Data Found', {
+        if (resData?.data?.length > 0) {
+          toast.success("Projects Data Found", {
             style: {
               background: "green",
               color: "white",
             },
-          })
+          });
         } else {
-          toast.error('No Data Found', {
+          toast.error("No Data Found", {
             style: {
               background: "red",
               color: "white",
             },
-          })
+          });
         }
         resultTableRef.current.scrollTo({
           top: 0,
@@ -87,6 +88,21 @@ const Form = () => {
       })
       .catch((err) => {
         console.error(err);
+        if (err?.response?.status === 404) {
+          toast.error(err?.response?.data?.message, {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          });
+        } else {
+          toast.error(err?.message, {
+            style: {
+              background: "red",
+              color: "white",
+            },
+          });
+        }
         setIsLoading(false);
       });
   };
@@ -446,7 +462,6 @@ const Form = () => {
             </button>
           </div>
         </form>
-        
       </div>
       <div ref={resultTableRef}>
         {isLoading && <Skeleton count={10} className="h-[40px]" />}
@@ -518,7 +533,8 @@ const Form = () => {
                         </td>
                         <td className="px-6 py-4">{item?.dept_name}</td>
                         <td className="px-6 py-4">
-                          {item?.contract[0]?.winner} {item?.contract[0]?.winner_tin}
+                          {item?.contract[0]?.winner}{" "}
+                          {item?.contract[0]?.winner_tin}
                         </td>
                         <td className="px-6 py-4">{item?.province}</td>
                         <td className="px-6 py-4">
@@ -537,7 +553,6 @@ const Form = () => {
             </div>
           </div>
         )}
-        
       </div>
     </div>
   );

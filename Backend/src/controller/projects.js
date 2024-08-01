@@ -6,28 +6,31 @@ const apiKeys = JSON.parse(apiKeysString);
 
 const findProjectsData = async (data) => {
   // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-  for (let i = 0; i < apiKeys.length; i++) {
+  const apiKeysLength = apiKeys.length;
+  for (let i = 0; i < apiKeysLength; i++) {
     const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
       data.year + 543
-    }&keyword=${data?.keyword || " "}&limit=${data?.limit || 500}&offset=${
-      data?.offset || 0
-    }&winner_tin=${data?.winnerTin || " "}&dept_code=${
-      data?.dept_code || ""
-    }&budget_start=${data?.referencePriceFrom || 0}&budget_end=${
-      data?.referencePriceTo || ""
-    }`;
-
-    // console.log("find project", url);
+    }&keyword=${data?.keyword || " "}&limit=${
+      data?.limit || process.env.PROJECTS_LIMIT
+    }&offset=${data?.offset || 0}&winner_tin=${
+      data?.winnerTin || " "
+    }&dept_code=${data?.dept_code || ""}&budget_start=${
+      data?.referencePriceFrom || 0
+    }&budget_end=${data?.referencePriceTo || ""}`;
 
     const options = {
       method: "GET",
     };
     const response = await fetch(url, options);
     const res = await response.json(); // Convert response body to JSON
-    if (res.message !== "API rate limit exceeded") return res;
+    // console.log(res);
+    if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
+      return res;
+    } else {
+      const resp = { status: false, message: 'API rate limit exceeded' };
+      return resp;
+    }
   }
-
   return res; // Return the JSON data
 };
 
@@ -61,21 +64,28 @@ export const getData = async (req, res) => {
         });
       } else {
         let result;
-        const winnerTinLength = winnerTins.length
+        const winnerTinLength = winnerTins.length;
         for (let i = 0; i < winnerTinLength; i++) {
           data.winnerTin = winnerTins[i]?.winner_tin;
-          const res = await findProjectsData(data);
-          console.log(res?.result)
-          if (res?.result?.length > 0) {
-            result = res
+          const projectRes = await findProjectsData(data);
+          if (projectRes?.status === false) {
+            res.status(404).send(projectRes);
+          }
+          // console.log(projectRes?.result);
+          if (projectRes?.result?.length > 0) {
+            result = projectRes;
           }
         }
-        console.log(result, "result")
-        res.status(200).send(result)
+        console.log(result, "result");
+        res.status(200).send(result);
       }
     } else {
-      const result = await findProjectsData(data);
-      res.status(200).send(result);
+      const projectRes = await findProjectsData(data);
+      if (projectRes?.status === false) {
+        res.status(404).send(projectRes);
+        return
+      }
+      res.status(200).send(projectRes);
     }
   } catch (error) {
     console.error(error);
@@ -107,9 +117,12 @@ export const getCompanyProjectsData = async (req, res) => {
     for (i; i >= floorYear; i--) {
       let data = req.body;
       data.year = i;
-      let result = await findProjectsData(data);
-      totalProjects += result.result.length;
-      companyProjectsData.push(result);
+      let projectRes = await findProjectsData(data);
+      if (projectRes?.status === false) {
+        res.status(404).send(projectRes);
+      }
+      totalProjects += projectRes.result.length;
+      companyProjectsData.push(projectRes);
     }
     let totalPotentialEarning = 0;
     companyProjectsData.forEach((item) => {
@@ -135,6 +148,7 @@ export const getCompanyProjectsData = async (req, res) => {
 // get department data
 
 const findDepartmentCode = async (data) => {
+  let resp;
   for (let i = 0; i < apiKeys.length; i++) {
     const url = `https://opend.data.go.th/govspending/egpdepartment?api-key=${apiKeys[i]}&dept_name=${data?.dept_name}`;
 
@@ -144,13 +158,14 @@ const findDepartmentCode = async (data) => {
 
     const response = await fetch(url, options);
     const res = await response.json(); // Convert response body to JSON
-    if (res.message !== "API rate limit exceeded") return res;
+    if (res.message !== "API rate limit exceeded") resp = res;
   }
-
-  if (res?.result[res?.result?.length - 1]?.dept_code) {
+  console.log(resp)
+  const deptCode = resp?.result[resp?.result?.length - 1]?.dept_code
+  if (deptCode) {
     return {
       status: true,
-      dept_code: res?.result[res?.result?.length - 1]?.dept_code,
+      dept_code: deptCode,
     }; // Return the JSON data
   }
   return { status: false, message: "department code not found" };
@@ -165,6 +180,7 @@ const findDepartmentSummary = async (data) => {
     const options = {
       method: "GET",
     };
+
     const response = await fetch(url, options);
     const res = await response.json(); // Convert response body to JSON
     if (res.message !== "API rate limit exceeded") return res;
@@ -180,7 +196,6 @@ export const getDepartmentData = async (req, res) => {
   try {
     const departmentCodeRes = await findDepartmentCode(req.body);
     const data = { ...req.body };
-    // console.log(departmentCodeRes);
     data.dept_code = departmentCodeRes.dept_code;
     let result = [];
     const initialYear = Number(data?.year);
@@ -190,8 +205,13 @@ export const getDepartmentData = async (req, res) => {
 
     while (result.length < 5 && year >= floorYear1) {
       // console.log("dept projects", year);
-      const res = await findProjectsData(data);
-      result.push(...res?.result);
+      // console.log(data)
+      const projectRes = await findProjectsData(data);
+      console.log(projectRes)
+      if (projectRes?.status === false) {
+        res.status(404).send(projectRes);
+      }
+      result.push(...projectRes?.result);
       year -= 1;
       data.year = year;
     }
