@@ -51,7 +51,7 @@ const Departments = ({ formData, departmentName }) => {
                   <tbody>
                     <tr className="odd:bg-white  even:bg-gray-50  border-b ">
                       <td className="px-6 py-4 font-bold">Department Name</td>
-                      <td className="px-6 py-4">{deptSummary?.year} </td>
+                      <td className="px-6 py-4">{departmentName} </td>
                     </tr>
                     <tr className="odd:bg-white  even:bg-gray-50  border-b ">
                       <td className="px-6 py-4 font-bold">Year</td>
@@ -88,7 +88,7 @@ const Departments = ({ formData, departmentName }) => {
             <div className="pl-2 pb-2 text-2xl font-semibold">
               Similar Projects by this department
             </div>
-            {deptProjects ? (
+            {deptProjects?.length > 0 ? (
               <table className="text-sm text-left rtl:text-right text-gray-500  ">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50  ">
                   <tr>
@@ -170,7 +170,7 @@ const Departments = ({ formData, departmentName }) => {
                 </tbody>
               </table>
             ) : (
-              <div>No Data Found</div>
+              <div className="pl-2 pb-2 text-xl" >No Data Found</div>
             )}
           </div>
         </>

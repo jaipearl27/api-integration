@@ -7,6 +7,7 @@ const apiKeys = JSON.parse(apiKeysString);
 const findProjectsData = async (data) => {
   // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   const apiKeysLength = apiKeys.length;
+
   for (let i = 0; i < apiKeysLength; i++) {
     const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
       data.year + 543
@@ -21,13 +22,16 @@ const findProjectsData = async (data) => {
     const options = {
       method: "GET",
     };
+
+    // console.log(url)
+
     const response = await fetch(url, options);
     const res = await response.json(); // Convert response body to JSON
     // console.log(res);
     if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
       return res;
     } else {
-      const resp = { status: false, message: 'API rate limit exceeded' };
+      const resp = { status: false, message: "API rate limit exceeded" };
       return resp;
     }
   }
@@ -76,14 +80,14 @@ export const getData = async (req, res) => {
             result = projectRes;
           }
         }
-        console.log(result, "result");
+        // console.log(result, "result");
         res.status(200).send(result);
       }
     } else {
       const projectRes = await findProjectsData(data);
       if (projectRes?.status === false) {
         res.status(404).send(projectRes);
-        return
+        return;
       }
       res.status(200).send(projectRes);
     }
@@ -147,7 +151,7 @@ export const getCompanyProjectsData = async (req, res) => {
 
 // get department data
 
-const findDepartmentCode = async (data) => {
+const findDepartmentCodeAndProjects = async (data) => {
   let resp;
   for (let i = 0; i < apiKeys.length; i++) {
     const url = `https://opend.data.go.th/govspending/egpdepartment?api-key=${apiKeys[i]}&dept_name=${data?.dept_name}`;
@@ -160,15 +164,28 @@ const findDepartmentCode = async (data) => {
     const res = await response.json(); // Convert response body to JSON
     if (res.message !== "API rate limit exceeded") resp = res;
   }
-  console.log(resp)
-  const deptCode = resp?.result[resp?.result?.length - 1]?.dept_code
-  if (deptCode) {
-    return {
-      status: true,
-      dept_code: deptCode,
-    }; // Return the JSON data
+  const departmentCodeRes = resp?.result;
+  let result = []
+  if (departmentCodeRes) {
+    for (let i = 0; i < departmentCodeRes.length; i++) {
+      data.dept_code = departmentCodeRes[i].dept_code;
+      let year = Number(data?.year);
+      let floorYear1 = year - 1;
+
+      while (result.length < 5 && year >= floorYear1) {
+        // console.log('============================getting department projects===========================')
+        const projectRes = await findProjectsData(data);
+        if (projectRes?.status === false) {
+          return projectRes;
+        }
+        result.push(...projectRes?.result);
+        year -= 1;
+        data.year = year;
+      }
+    }
+    return result
   }
-  return { status: false, message: "department code not found" };
+  return [];
 };
 
 const findDepartmentSummary = async (data) => {
@@ -194,28 +211,9 @@ const findDepartmentSummary = async (data) => {
 
 export const getDepartmentData = async (req, res) => {
   try {
-    const departmentCodeRes = await findDepartmentCode(req.body);
     const data = { ...req.body };
-    data.dept_code = departmentCodeRes.dept_code;
-    let result = [];
+    const result = await findDepartmentCodeAndProjects(data);
     const initialYear = Number(data?.year);
-
-    let year = Number(data?.year);
-    let floorYear1 = year - 3;
-
-    while (result.length < 5 && year >= floorYear1) {
-      // console.log("dept projects", year);
-      // console.log(data)
-      const projectRes = await findProjectsData(data);
-      console.log(projectRes)
-      if (projectRes?.status === false) {
-        res.status(404).send(projectRes);
-      }
-      result.push(...projectRes?.result);
-      year -= 1;
-      data.year = year;
-    }
-
     data.year = initialYear;
     let summaryResult = { total_project: "", total_price: "" };
     let summaryYear = Number(data.year);
