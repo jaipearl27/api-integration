@@ -10,7 +10,7 @@ const findProjectsData = async (data) => {
 
   for (let i = 0; i < apiKeysLength; i++) {
     const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
-      data.year + 543
+      data?.year ? data?.year + 543 : new Date().getFullYear() + 543
     }&keyword=${data?.keyword || " "}&limit=${
       data?.limit || process.env.PROJECTS_LIMIT
     }&offset=${data?.offset || 0}&winner_tin=${
@@ -23,7 +23,7 @@ const findProjectsData = async (data) => {
       method: "GET",
     };
 
-    // console.log(url)
+    console.log(url);
 
     const response = await fetch(url, options);
     const res = await response.json(); // Convert response body to JSON
@@ -165,16 +165,19 @@ const findDepartmentCodeAndProjects = async (data) => {
     if (res.message !== "API rate limit exceeded") resp = res;
   }
   const departmentCodeRes = resp?.result;
-  let result = []
+  let result = [];
   if (departmentCodeRes) {
     for (let i = 0; i < departmentCodeRes.length; i++) {
       data.dept_code = departmentCodeRes[i].dept_code;
       let year = Number(data?.year);
-      let floorYear1 = year - 1;
-
+      let floorYear1 = year - 5;
+      console.log(departmentCodeRes[i].dept_code);
       while (result.length < 5 && year >= floorYear1) {
-        // console.log('============================getting department projects===========================')
+        console.log(
+          "============================getting department projects==========================="
+        );
         const projectRes = await findProjectsData(data);
+        console.log(projectRes);
         if (projectRes?.status === false) {
           return projectRes;
         }
@@ -183,7 +186,7 @@ const findDepartmentCodeAndProjects = async (data) => {
         data.year = year;
       }
     }
-    return result
+    return result;
   }
   return [];
 };
