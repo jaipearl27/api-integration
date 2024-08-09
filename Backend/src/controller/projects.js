@@ -6,36 +6,46 @@ const apiKeys = JSON.parse(apiKeysString);
 
 const findProjectsData = async (data) => {
   // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  const apiKeysLength = apiKeys.length;
 
-  for (let i = 0; i < apiKeysLength; i++) {
-    const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
-      data?.year ? data?.year + 543 : new Date().getFullYear() + 543
-    }&keyword=${data?.keyword || " "}&limit=${
-      data?.limit || process.env.PROJECTS_LIMIT
-    }&offset=${data?.offset || 0}&winner_tin=${
-      data?.winnerTin || " "
-    }&dept_code=${data?.dept_code || ""}&budget_start=${
-      data?.referencePriceFrom || 0
-    }&budget_end=${data?.referencePriceTo || ""}`;
+  let projectsLimit = 900;
+  let allResult = { result: [] };
+  const apiKeysLength = apiKeys?.length;
 
-    const options = {
-      method: "GET",
-    };
+  let year = Number(data?.yearsTo?.value) || data?.year;
+  let floorYear = data?.year;
 
-    console.log(url);
+  while (year >= floorYear) {
+    for (let i = 0; i < apiKeysLength; i++) {
+      const url = `${process.env.API1}?api-key=${apiKeys[i]}&year=${
+        year ? year + 543 : new Date().getFullYear() + 543
+      }&keyword=${data?.keyword || " "}&limit=${
+        data?.limit || projectsLimit
+      }&offset=${data?.offset || 0}&winner_tin=${
+        data?.winnerTin || ""
+      }&dept_code=${data?.dept_code || ""}&budget_start=${
+        data?.referencePriceFrom || 0
+      }&budget_end=${data?.referencePriceTo || ""}`;
 
-    const response = await fetch(url, options);
-    const res = await response.json(); // Convert response body to JSON
-    // console.log(res);
-    if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
-      return res;
-    } else {
-      const resp = { status: false, message: "API rate limit exceeded" };
-      return resp;
+      const options = {
+        method: "GET",
+      };
+
+      console.log(url);
+
+      const response = await fetch(url, options);
+      const res = await response.json(); // Convert response body to JSON
+
+      if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
+        allResult.result = [...allResult.result, ...res.result]
+        break;
+      } else {
+        allResult = { status: false, message: "API rate limit exceeded" };
+        return;
+      }
     }
+    year -= 1;
   }
-  return res; // Return the JSON data
+  return allResult; // Return the JSON data
 };
 
 const findCompanyData = async (data) => {

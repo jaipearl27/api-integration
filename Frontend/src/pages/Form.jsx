@@ -55,12 +55,34 @@ const Form = () => {
   }, []);
 
   const onSubmit = (data) => {
+
+    if(Number(data?.yearsTo?.value) - Number(data?.yearsFrom?.value) > 10){
+      toast.error("Year range must be 10 years max", {
+        style: {
+          background: "red",
+          color: "white",
+        },
+      });
+      return
+    }
+
+    if (Number(data?.yearsFrom?.value) > Number(data?.yearsTo?.value)) {
+      toast.error("Year From needs to be equal to/smaller than Year To", {
+        style: {
+          background: "red",
+          color: "white",
+        },
+      });
+      return;
+    }
+
     setIsLoading(true);
     axios
       .post(`${import.meta.env.VITE_API_URL}/projects/find`, data)
       .then((res) => {
-        console.log(res.status, "status");
+        console.log(res, "status");
         let resData = { data: res.data.result, formData: data };
+        console.log()
         setApiData(resData);
         if (resData?.data?.length > 0) {
           toast.success("Projects Data Found", {
@@ -149,10 +171,10 @@ const Form = () => {
 
   const projectStatus = [
     { label: "ระหว่างดำเนินการ ", value: "ระหว่างดำเนินการ " },
-    { label: "จัดทำสัญญา/PO แล้ว", value: "จัดทำสัญญา/PO แล้ว" },
-    { label: "แล้วเสร็จตามสัญญา", value: "แล้วเสร็จตามสัญญา" },
-    { label: "ยกเลิกสัญญา", value: "ยกเลิกสัญญา" },
-    { label: "ยกเลิกโครงการ ", value: "ยกเลิกโครงการ " },
+    // { label: "จัดทำสัญญา/PO แล้ว", value: "จัดทำสัญญา/PO แล้ว" },
+    // { label: "แล้วเสร็จตามสัญญา", value: "แล้วเสร็จตามสัญญา" },
+    // { label: "ยกเลิกสัญญา", value: "ยกเลิกสัญญา" },
+    // { label: "ยกเลิกโครงการ ", value: "ยกเลิกโครงการ " },
   ];
 
   return (
@@ -341,7 +363,7 @@ const Form = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          {/* <div className="grid grid-cols-2 gap-2">
             <div className="mb-1">
               <label
                 htmlFor="announceDateFrom"
@@ -387,7 +409,7 @@ const Form = () => {
                   })}
               </select>
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-2 gap-2">
             <div className="mb-1">
@@ -533,8 +555,7 @@ const Form = () => {
                         </td>
                         <td className="px-6 py-4">{item?.dept_name}</td>
                         <td className="px-6 py-4">
-                          {item?.contract[0]?.winner}{" "}
-                          {item?.contract[0]?.winner_tin}
+                          {item?.contract[0]?.winner}
                         </td>
                         <td className="px-6 py-4">{item?.province}</td>
                         <td className="px-6 py-4">
