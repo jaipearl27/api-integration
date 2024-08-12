@@ -4,6 +4,28 @@ dotenv.config();
 const apiKeysString = process.env.API_KEYS;
 const apiKeys = JSON.parse(apiKeysString);
 
+const filterData = (data, params) => {
+  console.log(params);
+  const result = data.result.filter((entry) => {
+    let value = true;
+    if (params?.purchaseMethod) {
+      value = entry.purchase_method_name === params.purchaseMethod.value;
+      if (!value) return false;
+    }
+    if (params?.projectType) {
+      value = entry.project_type_name === params.projectType.value;
+      if (!value) return false;
+    }
+    if (params?.projectStatus) {
+      value = entry.contract[0].status === params.projectStatus.value;
+      if (!value) return false;
+    }
+    return value;
+  });
+
+  return { result };
+};
+
 const findProjectsData = async (data) => {
   // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -30,13 +52,13 @@ const findProjectsData = async (data) => {
         method: "GET",
       };
 
-      console.log(url);
+      // console.log(url);
 
       const response = await fetch(url, options);
       const res = await response.json(); // Convert response body to JSON
 
       if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
-        allResult.result = [...allResult.result, ...res.result]
+        allResult.result = [...allResult.result, ...res.result];
         break;
       } else {
         allResult = { status: false, message: "API rate limit exceeded" };
@@ -45,7 +67,7 @@ const findProjectsData = async (data) => {
     }
     year -= 1;
   }
-  return allResult; // Return the JSON data
+  return filterData(allResult, data); // Return the JSON data
 };
 
 const findCompanyData = async (data) => {
@@ -261,6 +283,7 @@ export const getDepartmentData = async (req, res) => {
 //winner data
 
 const filterWinnerTins = (data, winner) => {
+  console.log(data);
   return data.filter(
     (entry) => entry.winner_tin.startsWith("0") && entry.winner === winner
   );
