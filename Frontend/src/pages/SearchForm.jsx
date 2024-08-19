@@ -7,17 +7,17 @@ import { BeatLoader } from "react-spinner";
 import Skeleton from "react-loading-skeleton";
 import { toast, Toaster } from "sonner";
 
-const Form = () => {
+const SearchForm = () => {
   const [apiData, setApiData] = useState(
     JSON.parse(localStorage.getItem("apiData"))
   );
-  const [countries, setCountries] = useState(null);
+  // const [countries, setCountries] = useState(null);
   const [years, setYears] = useState([]);
-  const [apiUrl, setApiUrl] = useState(null);
+  // const [apiUrl, setApiUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   // refs
   const resultTableRef = useRef(null);
-  const [formData, setFormData] = useState(null);
+  // const [formData, setFormData] = useState(null);
 
   const {
     control,
@@ -178,7 +178,7 @@ const Form = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-10 justify-center py-10">
+    <div className="flex flex-col gap-10 justify-center py-5">
       <Toaster />
       <div className="flex flex-col justify-center  items-center gap-4">
         <div className="text-2xl font-semibold">Data Request Form:</div>
@@ -579,4 +579,4 @@ const Form = () => {
   );
 };
 
-export default Form;
+export default SearchForm;

@@ -118,7 +118,7 @@ const groupByData = [
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-4">
-      <div className="text-3xl font-semibold">
+      <div className="text-2xl font-semibold">
         Visualize Data
       </div>
       <form
