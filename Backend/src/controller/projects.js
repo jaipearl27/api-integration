@@ -5,7 +5,6 @@ const apiKeysString = process.env.API_KEYS;
 const apiKeys = JSON.parse(apiKeysString);
 
 const filterData = (data, params) => {
-  console.log(params);
   const result = data.result.filter((entry) => {
     let value = true;
     if (params?.purchaseMethod) {
@@ -80,6 +79,90 @@ const findCompanyData = async (data) => {
   return res; // Return the JSON data
 };
 
+// finding project as per winning company tins
+
+async function processWinningTin(data, winnerTins) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let result;
+      const winnerTinLength = winnerTins.length;
+
+      for (let i = 0; i < winnerTinLength; i++) {
+        data.winnerTin = winnerTins[i]?.winner_tin;
+        const projectRes = await findProjectsData(data);
+
+        if (projectRes?.status === false) {
+          resolve({
+            status: false,
+            message: "Project data not found",
+            data: [],
+          });
+          return;
+        }
+
+        if (projectRes?.result?.length > 0) {
+          result = projectRes;
+          break; // Exit the loop once a valid result is found
+        }
+      }
+      resolve(
+        result || {
+          status: false,
+          message: "No projects found",
+          data: [],
+        }
+      );
+    } catch (error) {
+      reject({
+        status: false,
+        message: "An error occurred",
+        error: error.message,
+      });
+    }
+  });
+}
+
+async function processWinnignTinAndDeptCodes(data, dept_codes) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let result;
+      const deptCodeLength = dept_codes.length;
+
+      for (let i = 0; i < deptCodeLength; i++) {
+        data.dept_code = dept_codes[i]?.winner_tin;
+        const projectRes = await findProjectsData(data);
+
+        if (projectRes?.status === false) {
+          resolve({
+            status: false,
+            message: "Project data not found",
+            data: [],
+          });
+          return;
+        }
+
+        if (projectRes?.result?.length > 0) {
+          result = projectRes;
+          break; // Exit the loop once a valid result is found
+        }
+      }
+      resolve(
+        result || {
+          status: false,
+          message: "No projects found",
+          data: [],
+        }
+      );
+    } catch (error) {
+      reject({
+        status: false,
+        message: "An error occurred",
+        error: error.message,
+      });
+    }
+  });
+}
+
 export const getData = async (req, res) => {
   try {
     let data = req.body;
@@ -100,18 +183,10 @@ export const getData = async (req, res) => {
         });
       } else {
         let result;
-        const winnerTinLength = winnerTins.length;
-        for (let i = 0; i < winnerTinLength; i++) {
-          data.winnerTin = winnerTins[i]?.winner_tin;
-          const projectRes = await findProjectsData(data);
-          if (projectRes?.status === false) {
-            res.status(404).send(projectRes);
-          }
-          // console.log(projectRes?.result);
-          if (projectRes?.result?.length > 0) {
-            result = projectRes;
-          }
-        }
+        // if (data?.deptCode && data?.deptCode?.length > 0) {
+
+        // }
+        result = await processWinningTin(data, winnerTins);
         // console.log(result, "result");
         res.status(200).send(result);
       }
@@ -183,20 +258,48 @@ export const getCompanyProjectsData = async (req, res) => {
 
 // get department data
 
-const findDepartmentCodeAndProjects = async (data) => {
-  let resp;
-  for (let i = 0; i < apiKeys.length; i++) {
-    const url = `https://opend.data.go.th/govspending/egpdepartment?api-key=${apiKeys[i]}&dept_name=${data?.dept_name}`;
+function findDeptCodes(data) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let resp;
 
-    const options = {
-      method: "GET",
-    };
+      for (let i = 0; i < apiKeys.length; i++) {
+        const url = `https://opend.data.go.th/govspending/egpdepartment?api-key=${apiKeys[i]}&dept_name=${data?.dept_name}`;
 
-    const response = await fetch(url, options);
-    const res = await response.json(); // Convert response body to JSON
-    if (res.message !== "API rate limit exceeded") resp = res;
-  }
-  const departmentCodeRes = resp?.result;
+        const options = {
+          method: "GET",
+        };
+
+        const response = await fetch(url, options);
+        const res = await response.json(); // Convert response body to JSON
+
+        if (res.message !== "API rate limit exceeded") {
+          resp = res.result;
+          break;
+        }
+      }
+
+      // Resolve the promise with the response or a default value
+      resolve(
+        resp || {
+          status: false,
+          message: "No valid response received",
+          data: [],
+        }
+      );
+    } catch (error) {
+      // Reject the promise with the error
+      reject({
+        status: false,
+        message: "An error occurred",
+        error: error.message,
+      });
+    }
+  });
+}
+
+const findDepartmentProjects = async (data) => {
+  const departmentCodeRes = await findDeptCodes(data);
   let result = [];
   if (departmentCodeRes) {
     for (let i = 0; i < departmentCodeRes.length; i++) {
@@ -205,9 +308,7 @@ const findDepartmentCodeAndProjects = async (data) => {
       let floorYear1 = year - 5;
       console.log(departmentCodeRes[i].dept_code);
       while (result.length < 5 && year >= floorYear1) {
-        console.log(
-          "============================getting department projects==========================="
-        );
+        console.log("============================getting department projects===========================");
         const projectRes = await findProjectsData(data);
         console.log(projectRes);
         if (projectRes?.status === false) {
@@ -247,7 +348,7 @@ const findDepartmentSummary = async (data) => {
 export const getDepartmentData = async (req, res) => {
   try {
     const data = { ...req.body };
-    const result = await findDepartmentCodeAndProjects(data);
+    const result = await findDepartmentProjects(data);
     const initialYear = Number(data?.year);
     data.year = initialYear;
     let summaryResult = { total_project: "", total_price: "" };
