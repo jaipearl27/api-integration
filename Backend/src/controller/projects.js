@@ -58,7 +58,7 @@ const findProjectsData = async (data) => {
 
       if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
         allResult.result = [...allResult.result, ...res.result];
-        break;
+        break; 
       } else {
         allResult = { status: false, message: "API rate limit exceeded" };
         return;
