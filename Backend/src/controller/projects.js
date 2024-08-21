@@ -122,14 +122,14 @@ async function processWinningTin(data, winnerTins) {
   });
 }
 
-async function processWinnignTinAndDeptCodes(data, dept_codes) {
+async function processDeptCodes(data, dept_codes) {
   return new Promise(async (resolve, reject) => {
     try {
       let result;
-      const deptCodeLength = dept_codes.length;
+      const deptCodesLength = dept_codes.length;
 
-      for (let i = 0; i < deptCodeLength; i++) {
-        data.dept_code = dept_codes[i]?.winner_tin;
+      for (let i = 0; i < deptCodesLength; i++) {
+        data.dept_code = dept_codes[i]?.dept_code;
         const projectRes = await findProjectsData(data);
 
         if (projectRes?.status === false) {
@@ -163,6 +163,51 @@ async function processWinnignTinAndDeptCodes(data, dept_codes) {
   });
 }
 
+async function processWinnignTinAndDeptCodes(data, winnerTins,  dept_codes) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let result;
+      const winnerTinsLength = winnerTins.length
+      const deptCodeLength = dept_codes.length;
+
+      for(let i = 0; i < winnerTinsLength; i++){  
+        data.winner_tin = winnerTins[i].winner_tin
+        for (let j = 0; j < deptCodeLength; j++) {
+          data.dept_code = dept_codes[j]?.winner_tin;
+          const projectRes = await findProjectsData(data);
+  
+          if (projectRes?.status === false) {
+            resolve({
+              status: false,
+              message: "Project data not found",
+              data: [],
+            });
+            return;
+          }
+  
+          if (projectRes?.result?.length > 0) {
+            result = projectRes;
+            break; // Exit the loop once a valid result is found
+          }
+        }
+      }
+      resolve(
+        result || {
+          status: false,
+          message: "No projects found",
+          data: [],
+        }
+      );
+    } catch (error) {
+      reject({
+        status: false,
+        message: "An error occurred",
+        error: error.message,
+      });
+    }
+  });
+}
+
 export const getData = async (req, res) => {
   try {
     let data = req.body;
@@ -173,7 +218,21 @@ export const getData = async (req, res) => {
         ? ""
         : Number(data?.referencePriceTo);
 
-    if (data?.winningCompany && data?.winningCompany?.length > 0) {
+    if(data?.winningCompany?.length > 0 && data?.dept_name?.length > 0){
+      const winnerTins = await findWinnerTin(data?.winningCompany, 20);
+      const dept_codes = await findDeptCodes(data)
+      if(dept_codes){
+        const projectRes = await processWinnignTinAndDeptCodes(data,winnerTins, dept_codes)
+        if (projectRes?.status === false) {
+          res.status(404).send(projectRes);
+          return;
+        }
+        res.status(200).send(projectRes);
+      } else {
+        res.status(404).json({status: false, message: 'no data found'})
+      }
+
+    } else if (data?.winningCompany?.length > 0) {
       const winnerTins = await findWinnerTin(data?.winningCompany, 20);
       if (!winnerTins) {
         res.status(200).json({
@@ -183,14 +242,23 @@ export const getData = async (req, res) => {
         });
       } else {
         let result;
-        // if (data?.deptCode && data?.deptCode?.length > 0) {
-
-        // }
         result = await processWinningTin(data, winnerTins);
-        // console.log(result, "result");
         res.status(200).send(result);
       }
-    } else {
+    } else if (data?.dept_name?.length > 0) {
+      const dept_codes = await findDeptCodes(data)
+      if(dept_codes){
+        const projectRes = await processDeptCodes(data, dept_codes)
+        if (projectRes?.status === false) {
+          res.status(404).send(projectRes);
+          return;
+        }
+        res.status(200).send(projectRes);
+      } else {
+        res.status(404).json({status: false, message: 'no data found'})
+      }
+    }
+    else {
       const projectRes = await findProjectsData(data);
       if (projectRes?.status === false) {
         res.status(404).send(projectRes);
@@ -281,11 +349,7 @@ function findDeptCodes(data) {
 
       // Resolve the promise with the response or a default value
       resolve(
-        resp || {
-          status: false,
-          message: "No valid response received",
-          data: [],
-        }
+        resp || undefined
       );
     } catch (error) {
       // Reject the promise with the error
@@ -383,14 +447,14 @@ export const getDepartmentData = async (req, res) => {
 
 //winner data
 
-const filterWinnerTins = (data, winner) => {
+function filterWinnerTins (data, winner) {
   console.log(data);
   return data.filter(
     (entry) => entry.winner_tin.startsWith("0") && entry.winner === winner
   );
 };
 
-export const findWinnerTin = async (winner, limit = 20) => {
+async function findWinnerTin (winner, limit = 20) {
   for (let i = 0; i < apiKeys.length; i++) {
     const url = `https://opend.data.go.th/govspending/egpwinner?api-key=${
       apiKeys[i]
