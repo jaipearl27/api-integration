@@ -25,7 +25,7 @@ const CompanyInfo = ({ formData, winnerTin }) => {
   }, [winnerTin]);
 
   useEffect(() => {
-    formData.winnerTin = winnerTin;
+    formData.winner_tin = winnerTin;
     axios
       .post(
         `${import.meta.env.VITE_API_URL}/projects/companyprojects`,

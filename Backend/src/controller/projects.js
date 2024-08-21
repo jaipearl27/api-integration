@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { findWinnerTin } from "../utils/winnerTins.js";
+import {findDeptCodes} from "../utils/deptCodes.js"
+
 const apiKeysString = process.env.API_KEYS;
 const apiKeys = JSON.parse(apiKeysString);
 
@@ -42,7 +45,7 @@ const findProjectsData = async (data) => {
       }&keyword=${data?.keyword || " "}&limit=${
         data?.limit || projectsLimit
       }&offset=${data?.offset || 0}&winner_tin=${
-        data?.winnerTin || ""
+        data?.winner_tin || ""
       }&dept_code=${data?.dept_code || ""}&budget_start=${
         data?.referencePriceFrom || 0
       }&budget_end=${data?.referencePriceTo || ""}`;
@@ -51,14 +54,14 @@ const findProjectsData = async (data) => {
         method: "GET",
       };
 
-      // console.log(url);
+      console.log(url);
 
       const response = await fetch(url, options);
       const res = await response.json(); // Convert response body to JSON
 
       if (res.message !== "API rate limit exceeded" && i < apiKeysLength) {
         allResult.result = [...allResult.result, ...res.result];
-        break; 
+        break;
       } else {
         allResult = { status: false, message: "API rate limit exceeded" };
         return;
@@ -70,7 +73,7 @@ const findProjectsData = async (data) => {
 };
 
 const findCompanyData = async (data) => {
-  const result = `https://dataapi.moc.go.th/juristic?juristic_id=${data.winnerTin}`;
+  const result = `https://dataapi.moc.go.th/juristic?juristic_id=${data.winner_tin}`;
   const options = {
     method: "GET",
   };
@@ -88,7 +91,7 @@ async function processWinningTin(data, winnerTins) {
       const winnerTinLength = winnerTins.length;
 
       for (let i = 0; i < winnerTinLength; i++) {
-        data.winnerTin = winnerTins[i]?.winner_tin;
+        data.winner_tin = winnerTins[i]?.winner_tin;
         const projectRes = await findProjectsData(data);
 
         if (projectRes?.status === false) {
@@ -163,19 +166,20 @@ async function processDeptCodes(data, dept_codes) {
   });
 }
 
-async function processWinnignTinAndDeptCodes(data, winnerTins,  dept_codes) {
+async function processWinnignTinAndDeptCodes(data, winnerTins, dept_codes) {
   return new Promise(async (resolve, reject) => {
     try {
       let result;
-      const winnerTinsLength = winnerTins.length
+      const winnerTinsLength = winnerTins.length;
       const deptCodeLength = dept_codes.length;
 
-      for(let i = 0; i < winnerTinsLength; i++){  
-        data.winner_tin = winnerTins[i].winner_tin
+      for (let i = 0; i < winnerTinsLength; i++) {
         for (let j = 0; j < deptCodeLength; j++) {
-          data.dept_code = dept_codes[j]?.winner_tin;
+          data.winner_tin = winnerTins[i].winner_tin;
+          data.dept_code = dept_codes[j]?.dept_code;
+        
           const projectRes = await findProjectsData(data);
-  
+
           if (projectRes?.status === false) {
             resolve({
               status: false,
@@ -184,7 +188,7 @@ async function processWinnignTinAndDeptCodes(data, winnerTins,  dept_codes) {
             });
             return;
           }
-  
+
           if (projectRes?.result?.length > 0) {
             result = projectRes;
             break; // Exit the loop once a valid result is found
@@ -218,20 +222,26 @@ export const getData = async (req, res) => {
         ? ""
         : Number(data?.referencePriceTo);
 
-    if(data?.winningCompany?.length > 0 && data?.dept_name?.length > 0){
+
+    // console.log(data)
+
+    if (data?.winningCompany?.length > 0 && data?.dept_name?.length > 0) {
       const winnerTins = await findWinnerTin(data?.winningCompany, 20);
-      const dept_codes = await findDeptCodes(data)
-      if(dept_codes){
-        const projectRes = await processWinnignTinAndDeptCodes(data,winnerTins, dept_codes)
+      const dept_codes = await findDeptCodes(data);
+      if (dept_codes) {
+        const projectRes = await processWinnignTinAndDeptCodes(
+          data,
+          winnerTins,
+          dept_codes
+        );
         if (projectRes?.status === false) {
           res.status(404).send(projectRes);
           return;
         }
         res.status(200).send(projectRes);
       } else {
-        res.status(404).json({status: false, message: 'no data found'})
+        res.status(404).json({ status: false, message: "no data found" });
       }
-
     } else if (data?.winningCompany?.length > 0) {
       const winnerTins = await findWinnerTin(data?.winningCompany, 20);
       if (!winnerTins) {
@@ -246,19 +256,18 @@ export const getData = async (req, res) => {
         res.status(200).send(result);
       }
     } else if (data?.dept_name?.length > 0) {
-      const dept_codes = await findDeptCodes(data)
-      if(dept_codes){
-        const projectRes = await processDeptCodes(data, dept_codes)
+      const dept_codes = await findDeptCodes(data);
+      if (dept_codes) {
+        const projectRes = await processDeptCodes(data, dept_codes);
         if (projectRes?.status === false) {
           res.status(404).send(projectRes);
           return;
         }
         res.status(200).send(projectRes);
       } else {
-        res.status(404).json({status: false, message: 'no data found'})
+        res.status(404).json({ status: false, message: "no data found" });
       }
-    }
-    else {
+    } else {
       const projectRes = await findProjectsData(data);
       if (projectRes?.status === false) {
         res.status(404).send(projectRes);
@@ -273,7 +282,7 @@ export const getData = async (req, res) => {
 
 export const getCompanyData = async (req, res) => {
   try {
-    const companyData = await findCompanyData(req.body.winnerTin);
+    const companyData = await findCompanyData(req.body.winner_tin);
     res.status(200).json({
       status: true,
       companyData: companyData,
@@ -326,41 +335,6 @@ export const getCompanyProjectsData = async (req, res) => {
 
 // get department data
 
-function findDeptCodes(data) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let resp;
-
-      for (let i = 0; i < apiKeys.length; i++) {
-        const url = `https://opend.data.go.th/govspending/egpdepartment?api-key=${apiKeys[i]}&dept_name=${data?.dept_name}`;
-
-        const options = {
-          method: "GET",
-        };
-
-        const response = await fetch(url, options);
-        const res = await response.json(); // Convert response body to JSON
-
-        if (res.message !== "API rate limit exceeded") {
-          resp = res.result;
-          break;
-        }
-      }
-
-      // Resolve the promise with the response or a default value
-      resolve(
-        resp || undefined
-      );
-    } catch (error) {
-      // Reject the promise with the error
-      reject({
-        status: false,
-        message: "An error occurred",
-        error: error.message,
-      });
-    }
-  });
-}
 
 const findDepartmentProjects = async (data) => {
   const departmentCodeRes = await findDeptCodes(data);
@@ -370,11 +344,13 @@ const findDepartmentProjects = async (data) => {
       data.dept_code = departmentCodeRes[i].dept_code;
       let year = Number(data?.year);
       let floorYear1 = year - 5;
-      console.log(departmentCodeRes[i].dept_code);
+      // console.log(departmentCodeRes[i].dept_code);
       while (result.length < 5 && year >= floorYear1) {
-        console.log("============================getting department projects===========================");
+        console.log(
+          "============================getting department projects==========================="
+        );
         const projectRes = await findProjectsData(data);
-        console.log(projectRes);
+        // console.log(projectRes);
         if (projectRes?.status === false) {
           return projectRes;
         }
@@ -445,29 +421,4 @@ export const getDepartmentData = async (req, res) => {
   }
 };
 
-//winner data
 
-function filterWinnerTins (data, winner) {
-  console.log(data);
-  return data.filter(
-    (entry) => entry.winner_tin.startsWith("0") && entry.winner === winner
-  );
-};
-
-async function findWinnerTin (winner, limit = 20) {
-  for (let i = 0; i < apiKeys.length; i++) {
-    const url = `https://opend.data.go.th/govspending/egpwinner?api-key=${
-      apiKeys[i]
-    }&winner=${winner}&limit=${limit || 20}&offset=0`;
-
-    // console.log(i, url);
-
-    const options = {
-      method: "GET",
-    };
-    const response = await fetch(url, options);
-    const res = await response.json(); // Convert response body to JSON
-    const winnerTins = filterWinnerTins(res.result, winner);
-    if (res?.message !== "API rate limit exceeded") return winnerTins;
-  }
-};

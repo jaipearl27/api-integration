@@ -234,8 +234,8 @@ const SearchForm = () => {
               id="keyword"
               placeholder="keyword"
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
-              {...register("keyword", { required: true })}
-              required
+              {...register("keyword", { required: false })}
+              
             />
           </div>
 
@@ -257,8 +257,10 @@ const SearchForm = () => {
                       value: year,
                       label: year,
                     }))}
+                    required
                   />
                 )}
+                
               />
             </div>
 
@@ -319,7 +321,7 @@ const SearchForm = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <div className="mb-1">
               <label
                 htmlFor="xaxis"
@@ -331,9 +333,10 @@ const SearchForm = () => {
                 type="text"
                 id="xaxis"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+                {...register("dept_name", {required: false})}
               />
             </div>
-            <div className="mb-1">
+            {/* <div className="mb-1">
               <label
                 htmlFor="yaxis2"
                 className="block mb-1 text-sm font-medium text-gray-90"
@@ -345,7 +348,7 @@ const SearchForm = () => {
                 id="yaxis2"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
               />
-            </div>
+            </div> */}
             <div className="mb-1">
               <label
                 htmlFor="projectType"
