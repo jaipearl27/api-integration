@@ -8,9 +8,7 @@ import Skeleton from "react-loading-skeleton";
 import { toast, Toaster } from "sonner";
 
 const SearchForm = () => {
-  const [apiData, setApiData] = useState(
-    JSON.parse(localStorage.getItem("apiData"))
-  );
+  const [apiData, setApiData] = useState(null);
   // const [countries, setCountries] = useState(null);
   const [years, setYears] = useState([]);
   // const [apiUrl, setApiUrl] = useState(null);
@@ -177,11 +175,26 @@ const SearchForm = () => {
     // { label: "ยกเลิกโครงการ ", value: "ยกเลิกโครงการ " },
   ];
 
+
+  const defaultValues = {
+    winningCompany: "",
+    yearsFrom: "",
+    yearsTo: "",
+    dept_name: "",
+    purchaseMethod: "",
+    purchaseSubMethod: "",
+    projectType: "",
+    projectStatus: "",
+    referencePriceFrom: 0,
+  }
+
   return (
     <div className="flex flex-col gap-10 justify-center py-5">
       <Toaster />
       <div className="flex flex-col justify-center  items-center gap-4">
-        <div className="text-2xl font-semibold">Data Request Form:</div>
+      <div className="text-xl md:text-2xl font-semibold pb-4">
+          Data Request Form:
+        </div>
         <form
           className="w-full px-10 md:px-0 md:w-[800px] z-[99999]"
           onSubmit={handleSubmit(onSubmit)}
@@ -210,7 +223,7 @@ const SearchForm = () => {
                 htmlFor="winningCompany"
                 className="block mb-1 text-sm font-medium text-gray-90"
               >
-                Winning Company Name
+                Winning Company
               </label>
               <input
                 type="text"
@@ -478,7 +491,7 @@ const SearchForm = () => {
               type="button"
               className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center "
               onClick={() => {
-                reset();
+                reset(defaultValues);
                 localStorage.removeItem("apiData");
                 setApiData(null);
               }}
@@ -490,7 +503,7 @@ const SearchForm = () => {
       </div>
       <div ref={resultTableRef}>
         {isLoading && <Skeleton count={10} className="h-[40px]" />}
-        {apiData?.data?.length > 0 && (
+        {apiData && apiData?.data?.length > 0 && (
           <div className="flex flex-col gap-4">
             <div className="text-2xl text-center font-semibold">Result:</div>
             <div className="relative overflow-x-auto sm:rounded-lg shadow-[0_0_1px_0px#000] mb-10">

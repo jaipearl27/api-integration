@@ -32,7 +32,6 @@ app.get("/", async (req, res) => {
 });
 
 app.use("/api/v1/projects", projectsRouter);
-
 app.listen(PORT, () => {
   console.log(`server started on port ${PORT}`);
 });

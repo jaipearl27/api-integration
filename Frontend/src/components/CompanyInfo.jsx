@@ -32,7 +32,7 @@ const CompanyInfo = ({ formData, winnerTin }) => {
         formData
       )
       .then((res) => {
-        // console.log('company data', res.data)
+        // console.log('company projects data', res.data.companyProjectsData)
         setCompanyProjects(res.data.companyProjectsData);
         setTotalProjects(res.data.totalProjects);
         setTotalPotentialEarning(res.data.totalPotentialEarning);
@@ -80,6 +80,7 @@ const CompanyInfo = ({ formData, winnerTin }) => {
     if (!companyProjects) return;
     let tempArr = [];
     let cleanedArr = [];
+
     for (let i = 0; i < companyProjects?.length; i++) {
       const result = companyProjects[i].result.map((project) => {
         project.price_build = removeCommaFromNum(project.price_build);
@@ -88,15 +89,16 @@ const CompanyInfo = ({ formData, winnerTin }) => {
       });
       tempArr = [...tempArr, ...result];
     }
+
+    // group arr of projects as per requirement
     let groupedResult = Object.groupBy(tempArr, ({ dept_name }) => dept_name);
-    // console.log(groupedResult)
+
+    // format grouped result to have array of objects instead of object given by grouped result with key as group by name
     Object.keys(groupedResult).forEach((e) => {
       let tempObj = {};
       tempObj = groupedResult[`${e}`];
       cleanedArr.push(tempObj);
     });
-
-    console.log(cleanedArr);
 
     let calcArr = cleanedArr.map((dept) => {
       const projects = dept;
