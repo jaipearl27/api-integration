@@ -108,7 +108,7 @@ const VisualizationForm = () => {
 
   const xAxisData = [
     { label: "Year", value: "budget_year" },
-    { label: "⁠month", value: "budget_year" },
+    // { label: "⁠month", value: "budget_year" },
     { label: "⁠department name", value: "dept_name" },
     { label: "⁠company name", value: "winner" },
     { label: "⁠purchase method", value: "⁠purchase_method_name" },
